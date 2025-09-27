@@ -41,45 +41,48 @@
       color: rgb(48, 255, 158);
     }
 
-    input, button {
+    input {
       font-family: 'Quicksand', Arial, sans-serif;
       border-radius: 12px;
       padding: 10px 15px;
       font-size: 16px;
       border: none;
       outline: none;
-    }
-
-    input {
       width: 200px;
       text-align: center;
     }
 
-    button {
-      background: rgb(48, 200, 255);
-      color: black;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: cyan;
-    }
-
     /* Difficulty buttons */
-    #difficulty-selection button {
+    #difficulty-selection {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column; /* vẫn giữ text trên, buttons dưới */
+      align-items: center;
+      gap: 10px;
+    }
+
+    #difficulty-selection p {
+      color: white;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    #difficulty-buttons {
+      display: flex; /* xếp hàng ngang */
+      gap: 10px;
+    }
+
+    #difficulty-buttons button {
       padding: 10px 18px;
       font-weight: 600;
       border-radius: 12px;
-      margin: 5px;
       border: none;
       cursor: pointer;
       font-size: 16px;
       transition: all 0.2s;
     }
 
-    #difficulty-selection button:hover {
+    #difficulty-buttons button:hover {
       filter: brightness(1.2);
     }
 
@@ -146,14 +149,15 @@
   <div id="login-screen">
     <h1>🐍 Rialo Snake 🐍</h1>
     <input id="username" type="text" placeholder="Enter your name..." />
-    <button onclick="showDifficulty()">Start</button>
 
     <!-- DIFFICULTY SELECTION -->
-    <div id="difficulty-selection" style="display:none; margin-top: 20px;">
-      <p style="color:white; font-weight:600;">Select Difficulty:</p>
-      <button style="background: rgb(152, 8, 174); color:white;" onclick="startGameWithSpeed(30)">Easy</button>
-      <button style="background: orange; color:white;" onclick="startGameWithSpeed(70)">Medium</button>
-      <button style="background: rgb(48, 138, 255); color:white;" onclick="startGameWithSpeed(100)">Hard</button>
+    <div id="difficulty-selection">
+      <p>Choose your challenge to start playing</p>
+      <div id="difficulty-buttons">
+        <button style="background: rgb(152, 8, 174); color:white;" onclick="startGameWithSpeed(30)">Easy</button>
+        <button style="background: orange; color:white;" onclick="startGameWithSpeed(70)">Medium</button>
+        <button style="background: rgb(48, 138, 255); color:white;" onclick="startGameWithSpeed(100)">Hard</button>
+      </div>
     </div>
   </div>
 
@@ -204,24 +208,18 @@
       {src: "red.png", point: 100}
     ];
 
-    // show difficulty selection
-    function showDifficulty() {
+    // start game with chosen speed
+    function startGameWithSpeed(speed) {
       username = document.getElementById("username").value.trim();
       if (!username) {
         alert("Please enter your name!");
         return;
       }
-      document.getElementById("difficulty-selection").style.display = "block";
-    }
 
-    // start game with chosen speed
-    function startGameWithSpeed(speed) {
-      if (!username) return;
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("game-screen").style.display = "block";
 
       // Map speed: higher number -> faster
-      // 30 -> slow, 70 -> medium, 100 -> fast
       gameSpeed = 130 - speed;
 
       resetGame();
