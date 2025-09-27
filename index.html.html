@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🐍 Rialo Snake 🐍</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: black;
+      color: rgb(48, 255, 158);
+      text-align: center;
+      font-family: 'Quicksand', Arial, sans-serif; /* font bo tròn cute */
+    }
+    #game-screen { display: none; position: relative; }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: black;
+
+      border: 2px solid rgb(14, 90, 98);   /* viền */
+      border-radius: 10px;       /* bo góc */
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.6); /* hiệu ứng sáng */
+    }
+    /* hiển thị User + Score */
+    #player-info {
+      font-size: 20px;
+      margin: 8px 0;
+      font-weight: 600;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    #player-info div {
+      min-width: 120px;
+      text-align: left;
+    }
+    /* game over popup */
+    #gameover-popup {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 20px;
+      border: 2px solid rgb(16, 70, 81);
+      border-radius: 15px;
+      text-align: center;
+      z-index: 10;
+      box-shadow: 0 0 20px rgba(13, 52, 73, 0.8);
+      font-family: 'Quicksand', Arial, sans-serif;
+    }
+    #gameover-popup button {
+      margin-top: 10px;
+      padding: 10px 18px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 12px;
+      border: none;
+      background: limegreen;
+      color: white;
+      font-family: 'Quicksand', Arial, sans-serif;
+      font-weight: 600;
+    }
+    input, button {
+      font-family: 'Quicksand', Arial, sans-serif;
+      border-radius: 12px;
+      padding: 8px 12px;
+      border: none;
+      outline: none;
+    }
+    button {
+      background: rgb(48, 200, 255);
+      color: black;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: cyan;
+    }
+    input {
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <h1>🐍 Rialo Snake 🐍</h1>
+    <input id="username" type="text" placeholder="Enter your name..." />
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div id="game-screen">
+    <h1>🐍 Rialo Snake 🐍</h1>
+    <!-- User + Score -->
+    <div id="player-info">
+      <div id="player-name"></div>
+      <div id="player-score"></div>
+    </div>
+
+    <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+    <!-- Game Over popup -->
+    <div id="gameover-popup">
+      <h2>Game Over!</h2>
+      <p id="final-score"></p>
+      <button onclick="restartGame()">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let username = "";
+    let snake, direction, food, score;
+    let gameRunning = false;
+
+    // background image
+    let background = new Image();
+    background.src = "bg.png";
+
+    // snake images
+    let headImg = new Image();
+    headImg.src = "logo.png";   // đầu rắn
+
+    let bodyImg = new Image();
+    bodyImg.src = "logo.png";   // thân rắn
+
+    // food types with image + points
+    const foodTypes = [
+      {src: "white.png", point: 10},
+      {src: "green.png", point: 20},
+      {src: "blue.png", point: 30},
+      {src: "yellow.png", point: 50},
+      {src: "red.png", point: 100}
+    ];
+
+    function startGame() {
+      username = document.getElementById("username").value.trim();
+      if (username === "") {
+        alert("Please enter your name!");
+        return;
+      }
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("game-screen").style.display = "block";
+      resetGame();
+      gameRunning = true;
+      gameLoop();
+    }
+
+    function resetGame() {
+      snake = [{x: 10, y: 10}];
+      direction = "RIGHT";
+      score = 0;
+      placeFood();
+      updatePlayerInfo();
+      document.getElementById("gameover-popup").style.display = "none";
+    }
+
+    function placeFood() {
+      const randomFood = foodTypes[Math.floor(Math.random() * foodTypes.length)];
+      let foodImg = new Image();
+      foodImg.src = randomFood.src;
+      food = {
+        x: Math.floor(Math.random() * (canvas.width / 20)),
+        y: Math.floor(Math.random() * (canvas.height / 20)),
+        img: foodImg,
+        point: randomFood.point
+      };
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    });
+
+    function drawBackground() {
+      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawSnake() {
+      snake.forEach((part, index) => {
+        ctx.save();
+        ctx.shadowBlur = 15;        
+        ctx.shadowColor = "lime";
+
+        if (index === 0) {
+          ctx.drawImage(headImg, part.x * 20, part.y * 20, 20, 20);
+        } else {
+          ctx.drawImage(bodyImg, part.x * 20, part.y * 20, 20, 20);
+        }
+        ctx.restore();
+      });
+    }
+
+    function drawFood() {
+      ctx.drawImage(food.img, food.x * 20, food.y * 20, 20, 20);
+    }
+
+    function update() {
+      let head = {...snake[0]};
+      if (direction === "UP") head.y--;
+      if (direction === "DOWN") head.y++;
+      if (direction === "LEFT") head.x--;
+      if (direction === "RIGHT") head.x++;
+
+      if (head.x < 0 || head.y < 0 || head.x >= canvas.width/20 || head.y >= canvas.height/20 ||
+          snake.some(p => p.x === head.x && p.y === head.y)) {
+        gameOver();
+        return;
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score += food.point;
+        placeFood();
+      } else {
+        snake.pop();
+      }
+      updatePlayerInfo();
+    }
+
+    function drawGame() {
+      drawBackground();
+      drawSnake();
+      drawFood();
+    }
+
+    function updatePlayerInfo() {
+      document.getElementById("player-name").textContent = "User: " + username;
+      document.getElementById("player-score").textContent = "Score: " + score;
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      update();
+      drawGame();
+      setTimeout(gameLoop, 150);
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      document.getElementById("final-score").textContent =
+        username + " scored " + score + " points!";
+      document.getElementById("gameover-popup").style.display = "block";
+    }
+
+    function restartGame() {
+      resetGame();
+      gameRunning = true;
+      gameLoop();
+    }
+  </script>
+</body>
+</html>
